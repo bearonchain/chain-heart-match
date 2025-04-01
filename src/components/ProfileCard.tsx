@@ -10,9 +10,10 @@ interface ProfileCardProps {
   profile: UserProfile;
   onLike: (id: string) => void;
   onDislike: (id: string) => void;
+  isCompact?: boolean;
 }
 
-const ProfileCard = ({ profile, onLike, onDislike }: ProfileCardProps) => {
+const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileCardProps) => {
   const [isAnimating, setIsAnimating] = useState<string | null>(null);
 
   const handleLike = () => {
@@ -33,7 +34,7 @@ const ProfileCard = ({ profile, onLike, onDislike }: ProfileCardProps) => {
 
   return (
     <Card 
-      className={`blockchain-card blockchain-glow max-w-md w-full mx-auto overflow-hidden h-[70vh] relative
+      className={`blockchain-card blockchain-glow ${isCompact ? 'max-w-xs' : 'max-w-md'} w-full mx-auto overflow-hidden ${isCompact ? 'h-[400px]' : 'h-[70vh]'} relative
         ${isAnimating === "right" ? "animate-slide-right" : ""}
         ${isAnimating === "left" ? "animate-slide-left" : ""}
       `}
@@ -56,7 +57,7 @@ const ProfileCard = ({ profile, onLike, onDislike }: ProfileCardProps) => {
         <div className="mt-auto p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
           <div className="flex items-end justify-between mb-2">
             <div>
-              <h2 className="text-2xl font-bold">{profile.name}, {profile.age}</h2>
+              <h2 className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold`}>{profile.name}, {profile.age}</h2>
               <div className="flex items-center text-white/80 text-sm mb-2">
                 <MapPin className="h-3 w-3 mr-1" />
                 <span>{profile.location}</span>
@@ -64,10 +65,10 @@ const ProfileCard = ({ profile, onLike, onDislike }: ProfileCardProps) => {
             </div>
           </div>
           
-          <p className="text-sm text-white/90 mb-3 line-clamp-2">{profile.bio}</p>
+          <p className={`text-sm text-white/90 mb-3 ${isCompact ? 'line-clamp-1' : 'line-clamp-2'}`}>{profile.bio}</p>
           
           <div className="flex flex-wrap gap-2 mb-4">
-            {profile.interests.slice(0, 3).map((interest, index) => (
+            {profile.interests.slice(0, isCompact ? 2 : 3).map((interest, index) => (
               <Badge 
                 key={index}
                 variant="outline" 
@@ -80,19 +81,19 @@ const ProfileCard = ({ profile, onLike, onDislike }: ProfileCardProps) => {
           
           <div className="flex justify-between gap-4 mt-4">
             <Button 
-              size="lg"
+              size={isCompact ? "default" : "lg"}
               variant="outline" 
               className="rounded-full bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 hover:text-white text-white flex-1"
               onClick={handleDislike}
             >
-              <X className="h-5 w-5" />
+              <X className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
             <Button 
-              size="lg"
+              size={isCompact ? "default" : "lg"}
               className="rounded-full bg-love-purple hover:bg-love-purple/90 text-white flex-1 btn-primary-glow"
               onClick={handleLike}
             >
-              <Heart className="h-5 w-5" />
+              <Heart className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
           </div>
         </div>

@@ -16,3 +16,5 @@ export interface Match {
   matchedUserId: string;
   timestamp: Date;
 }
+
+export type MatchStatus = 'liked' | 'disliked' | 'pending';

@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import Header from "@/components/Header";
 import ProfileCard from "@/components/ProfileCard";
+import ProfileShowcase from "@/components/ProfileShowcase";
 import EmptyState from "@/components/EmptyState";
 import BlockchainBackground from "@/components/Blockchain";
 import { mockUsers } from "@/data/mockUsers";
-import { UserProfile } from "@/types/userTypes";
+import { UserProfile, MatchStatus } from "@/types/userTypes";
 
 const Index = () => {
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [matches, setMatches] = useState<string[]>([]);
+  const [profileStatus, setProfileStatus] = useState<Record<string, MatchStatus>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,22 +41,33 @@ const Index = () => {
       });
     }
     
-    // Remove profile from deck
-    setProfiles(prevProfiles => prevProfiles.filter(profile => profile.id !== id));
+    // Set profile status
+    setProfileStatus(prev => ({
+      ...prev,
+      [id]: 'liked'
+    }));
   };
 
   const handleDislike = (id: string) => {
-    // Remove profile from deck
-    setProfiles(prevProfiles => prevProfiles.filter(profile => profile.id !== id));
+    // Set profile status
+    setProfileStatus(prev => ({
+      ...prev,
+      [id]: 'disliked'
+    }));
   };
 
   const resetProfiles = () => {
-    setProfiles(mockUsers);
+    setProfileStatus({});
     toast({
       title: "Profiles reset",
       description: "All profiles have been restored.",
     });
   };
+
+  // Filter profiles for the main card (profiles not yet acted on)
+  const pendingProfiles = profiles.filter(
+    profile => !profileStatus[profile.id] || profileStatus[profile.id] === 'pending'
+  );
   
   return (
     <div className="min-h-screen w-full bg-background">
@@ -62,7 +75,7 @@ const Index = () => {
       <Header />
       
       <main className="container pt-24 pb-16 px-4 flex flex-col items-center">
-        <div className="max-w-md w-full mx-auto">
+        <div className="max-w-md w-full mx-auto mb-16">
           <div className="mb-8 text-center animate-fade-in">
             <h1 className="text-3xl font-bold bg-gradient-blockchain bg-clip-text text-transparent mb-2">
               Find Your Perfect Match on the Blockchain
@@ -73,9 +86,9 @@ const Index = () => {
           </div>
           
           <div className="w-full animate-fade-in">
-            {profiles.length > 0 ? (
+            {pendingProfiles.length > 0 ? (
               <ProfileCard 
-                profile={profiles[0]} 
+                profile={pendingProfiles[0]} 
                 onLike={handleLike} 
                 onDislike={handleDislike} 
               />
@@ -84,6 +97,16 @@ const Index = () => {
             )}
           </div>
         </div>
+        
+        {profiles.length > 0 && (
+          <div className="w-full mt-12 animate-fade-in">
+            <ProfileShowcase 
+              profiles={profiles} 
+              onLike={handleLike} 
+              onDislike={handleDislike} 
+            />
+          </div>
+        )}
       </main>
     </div>
   );
