@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { UserProfile } from "@/types/userTypes";
 import { Card } from "@/components/ui/card";
-import { Heart, X, Sparkles, MapPin, Eye } from "lucide-react";
+import { Heart, X, Sparkles, MapPin, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -16,6 +16,7 @@ interface ProfileCardProps {
 
 const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileCardProps) => {
   const [isAnimating, setIsAnimating] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleLike = () => {
     setIsAnimating("right");
@@ -33,6 +34,22 @@ const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileC
     }, 300);
   };
 
+  const nextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (profile.images.length > 0) {
+      setCurrentImageIndex((prev) => (prev + 1) % profile.images.length);
+    }
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (profile.images.length > 0) {
+      setCurrentImageIndex((prev) => (prev === 0 ? profile.images.length - 1 : prev - 1));
+    }
+  };
+
   return (
     <Card 
       className={`blockchain-card blockchain-glow ${isCompact ? 'max-w-xs' : 'max-w-md'} w-full mx-auto overflow-hidden ${isCompact ? 'h-[400px]' : 'h-[70vh]'} relative
@@ -43,13 +60,43 @@ const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileC
       <div 
         className="h-full bg-gradient-to-b from-transparent to-black/70 relative flex flex-col"
         style={{
-          backgroundImage: `url(${profile.images[0] || "/placeholder.svg"})`,
+          backgroundImage: `url(${profile.images[currentImageIndex] || "/placeholder.svg"})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
+        {profile.images.length > 1 && (
+          <>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/40"
+              onClick={prevImage}
+            >
+              <ChevronLeft className="h-4 w-4 text-white" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/40"
+              onClick={nextImage}
+            >
+              <ChevronRight className="h-4 w-4 text-white" />
+            </Button>
+            
+            <div className="absolute top-4 left-0 right-0 flex justify-center gap-1 z-10">
+              {profile.images.map((_, index) => (
+                <div 
+                  key={index} 
+                  className={`w-1.5 h-1.5 rounded-full ${currentImageIndex === index ? 'bg-white' : 'bg-white/30'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
         {profile.walletConnected && (
-          <div className="absolute top-4 right-4 bg-love-blue/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 animate-pulse-slow">
+          <div className="absolute top-4 right-4 bg-love-blue/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 animate-pulse-slow z-10">
             <Sparkles className="h-3 w-3 text-love-blue" />
             <span className="text-xs font-semibold text-white">Verified on Chain</span>
           </div>

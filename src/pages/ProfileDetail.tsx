@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, X, MapPin, MessageCircle, Wallet, User } from "lucide-react";
+import { ArrowLeft, Heart, X, MapPin, MessageCircle, Wallet, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,18 @@ const ProfileDetail = () => {
     });
   };
 
+  const nextImage = () => {
+    if (profile && profile.images.length > 0) {
+      setCurrentImageIndex((prev) => (prev + 1) % profile.images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (profile && profile.images.length > 0) {
+      setCurrentImageIndex((prev) => (prev === 0 ? profile.images.length - 1 : prev - 1));
+    }
+  };
+
   if (!profile) {
     return (
       <div className="min-h-screen w-full bg-background pt-24 flex items-center justify-center">
@@ -84,6 +96,38 @@ const ProfileDetail = () => {
                   alt={profile.name} 
                   className="w-full h-full object-cover"
                 />
+                
+                {profile.images.length > 1 && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/40"
+                      onClick={prevImage}
+                    >
+                      <ChevronLeft className="h-5 w-5 text-white" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/40"
+                      onClick={nextImage}
+                    >
+                      <ChevronRight className="h-5 w-5 text-white" />
+                    </Button>
+                    
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
+                      {profile.images.map((_, index) => (
+                        <div 
+                          key={index} 
+                          className={`w-2 h-2 rounded-full ${currentImageIndex === index ? 'bg-white' : 'bg-white/30'}`}
+                          onClick={() => setCurrentImageIndex(index)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+                
                 {profile.walletConnected && (
                   <div className="absolute top-4 right-4 bg-love-blue/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1">
                     <Wallet className="h-3 w-3 text-love-blue" />
