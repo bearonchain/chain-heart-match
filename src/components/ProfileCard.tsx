@@ -1,11 +1,13 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserProfile } from "@/types/userTypes";
 import { Card } from "@/components/ui/card";
 import { Heart, X, Sparkles, MapPin, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+
+const PROFILE_STATUS_KEY = 'chainHeartMatch_profileStatus';
 
 interface ProfileCardProps {
   profile: UserProfile;
@@ -17,8 +19,22 @@ interface ProfileCardProps {
 const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileCardProps) => {
   const [isAnimating, setIsAnimating] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isDisliked, setIsDisliked] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLike = () => {
+  // Check if profile is disliked on mount
+  useEffect(() => {
+    const profileStatus = localStorage.getItem(PROFILE_STATUS_KEY);
+    const statuses = profileStatus ? JSON.parse(profileStatus) : {};
+    setIsDisliked(statuses[profile.id] === 'disliked');
+  }, [profile.id]);
+
+  const handleLike = (e: React.MouseEvent) => {
+    if (!e) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (isDisliked) return;
     setIsAnimating("right");
     setTimeout(() => {
       onLike(profile.id);
@@ -26,36 +42,68 @@ const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileC
     }, 300);
   };
 
-  const handleDislike = () => {
+  const handleDislike = (e: React.MouseEvent) => {
+    if (!e) return;
+    e.preventDefault();
+    e.stopPropagation();
     setIsAnimating("left");
+    setIsDisliked(true);
     setTimeout(() => {
       onDislike(profile.id);
       setIsAnimating(null);
+      toast({
+        title: "Profile removed",
+        description: "You won't see this profile again.",
+      });
     }, 300);
   };
 
-  const nextImage = (e: React.MouseEvent) => {
+  const handleViewProfile = (e: React.MouseEvent) => {
+    // Only navigate if clicking on the card itself, not on buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
-    if (profile.images.length > 0) {
+    
+    if (isDisliked) {
+      return;
+    }
+    
+    navigate(`/profile/${profile.id}`);
+  };
+
+  const nextImage = (e: React.MouseEvent) => {
+    if (!e) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (profile.images.length > 0 && !isDisliked) {
       setCurrentImageIndex((prev) => (prev + 1) % profile.images.length);
     }
   };
 
   const prevImage = (e: React.MouseEvent) => {
+    if (!e) return;
     e.preventDefault();
     e.stopPropagation();
-    if (profile.images.length > 0) {
+    if (profile.images.length > 0 && !isDisliked) {
       setCurrentImageIndex((prev) => (prev === 0 ? profile.images.length - 1 : prev - 1));
     }
   };
 
+  if (isDisliked) {
+    return null; // Don't render disliked profiles
+  }
+
   return (
     <Card 
-      className={`blockchain-card blockchain-glow ${isCompact ? 'max-w-xs' : 'max-w-md'} w-full mx-auto overflow-hidden ${isCompact ? 'h-[400px]' : 'h-[70vh]'} relative
+      className={`blockchain-card blockchain-glow ${isCompact ? 'max-w-xs' : 'max-w-md'} w-full mx-auto overflow-hidden ${isCompact ? 'h-[400px]' : 'h-[70vh]'} relative cursor-pointer
         ${isAnimating === "right" ? "animate-slide-right" : ""}
         ${isAnimating === "left" ? "animate-slide-left" : ""}
       `}
+      onClick={handleViewProfile}
     >
       <div 
         className="h-full bg-gradient-to-b from-transparent to-black/70 relative flex flex-col"
@@ -127,7 +175,7 @@ const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileC
             ))}
           </div>
           
-          <div className="flex justify-between gap-4 mt-4">
+          <div className="flex justify-between gap-4 mt-4" onClick={e => e.stopPropagation()}>
             <Button 
               size={isCompact ? "default" : "lg"}
               variant="outline" 
@@ -136,15 +184,14 @@ const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileC
             >
               <X className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
-            <Link to={`/profile/${profile.id}`} className="flex-none">
-              <Button
-                size={isCompact ? "default" : "lg"}
-                variant="outline"
-                className="rounded-full bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 hover:text-white text-white"
-              >
-                <Eye className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
-              </Button>
-            </Link>
+            <Button
+              size={isCompact ? "default" : "lg"}
+              variant="outline"
+              className="rounded-full bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 hover:text-white text-white"
+              onClick={handleViewProfile}
+            >
+              <Eye className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+            </Button>
             <Button 
               size={isCompact ? "default" : "lg"}
               className="rounded-full bg-love-purple hover:bg-love-purple/90 text-white flex-1 btn-primary-glow"

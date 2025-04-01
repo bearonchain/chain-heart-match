@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Heart, X, MapPin, MessageCircle, Wallet, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,21 +7,40 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { UserProfile } from "@/types/userTypes";
 import { mockUsers } from "@/data/mockUsers";
+import ProfileDetailedInfo from "@/components/ProfileDetailedInfo";
+
+const PROFILE_STATUS_KEY = 'chainHeartMatch_profileStatus';
 
 const ProfileDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if profile is disliked
+    const profileStatus = localStorage.getItem(PROFILE_STATUS_KEY);
+    const statuses = profileStatus ? JSON.parse(profileStatus) : {};
+    
+    if (statuses[id] === 'disliked') {
+      navigate('/');
+      return;
+    }
+
     // In a real app, we would fetch from the blockchain
     // For now, we'll use mock data
     const foundProfile = mockUsers.find(user => user.id === id);
     if (foundProfile) {
       setProfile(foundProfile);
+      setImageError(false); // Reset error state when profile changes
     }
-  }, [id]);
+  }, [id, navigate]);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
 
   const handleLike = () => {
     toast({
@@ -32,10 +50,19 @@ const ProfileDetail = () => {
   };
 
   const handleDislike = () => {
+    // Update profile status in localStorage
+    const profileStatus = localStorage.getItem(PROFILE_STATUS_KEY);
+    const statuses = profileStatus ? JSON.parse(profileStatus) : {};
+    statuses[id] = 'disliked';
+    localStorage.setItem(PROFILE_STATUS_KEY, JSON.stringify(statuses));
+
     toast({
-      title: "Disliked profile",
-      description: `You disliked ${profile?.name}'s profile`,
+      title: "Profile removed",
+      description: "You won't see this profile again.",
     });
+
+    // Navigate back to home page
+    navigate('/');
   };
 
   const handleMessage = () => {
@@ -45,16 +72,29 @@ const ProfileDetail = () => {
     });
   };
 
-  const nextImage = () => {
+  const nextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (profile && profile.images.length > 0) {
       setCurrentImageIndex((prev) => (prev + 1) % profile.images.length);
+      setImageError(false);
     }
   };
 
-  const prevImage = () => {
+  const prevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (profile && profile.images.length > 0) {
       setCurrentImageIndex((prev) => (prev === 0 ? profile.images.length - 1 : prev - 1));
+      setImageError(false);
     }
+  };
+
+  const handleDotClick = (e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex(index);
+    setImageError(false);
   };
 
   if (!profile) {
@@ -91,45 +131,55 @@ const ProfileDetail = () => {
             {/* Left Column - Profile Images */}
             <div className="md:col-span-3">
               <div className="relative aspect-[4/5] rounded-lg overflow-hidden blockchain-glow">
-                <img 
-                  src={profile.images[currentImageIndex] || "/placeholder.svg"} 
-                  alt={profile.name} 
-                  className="w-full h-full object-cover"
-                />
+                {imageError ? (
+                  <div className="w-full h-full flex items-center justify-center bg-accent">
+                    <User className="h-20 w-20 text-muted-foreground" />
+                  </div>
+                ) : (
+                  <img 
+                    src={profile?.images[currentImageIndex]}
+                    alt={profile?.name}
+                    className="w-full h-full object-cover"
+                    onError={handleImageError}
+                  />
+                )}
                 
-                {profile.images.length > 1 && (
+                {!imageError && profile?.images.length > 1 && (
                   <>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/40"
+                    <button 
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40 transition-colors"
                       onClick={prevImage}
                     >
-                      <ChevronLeft className="h-5 w-5 text-white" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/40"
+                      <ChevronLeft className="h-6 w-6 text-white" />
+                    </button>
+                    <button 
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40 transition-colors"
                       onClick={nextImage}
                     >
-                      <ChevronRight className="h-5 w-5 text-white" />
-                    </Button>
+                      <ChevronRight className="h-6 w-6 text-white" />
+                    </button>
                     
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
                       {profile.images.map((_, index) => (
-                        <div 
+                        <button 
                           key={index} 
-                          className={`w-2 h-2 rounded-full ${currentImageIndex === index ? 'bg-white' : 'bg-white/30'}`}
-                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-2.5 h-2.5 rounded-full transition-all ${
+                            currentImageIndex === index 
+                              ? 'bg-white scale-110' 
+                              : 'bg-white/30 hover:bg-white/50'
+                          }`}
+                          onClick={(e) => handleDotClick(e, index)}
                         />
                       ))}
                     </div>
                   </>
                 )}
                 
-                {profile.walletConnected && (
-                  <div className="absolute top-4 right-4 bg-love-blue/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1">
+                {/* Gradient overlay for better visibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                
+                {profile?.walletConnected && (
+                  <div className="absolute top-4 right-4 bg-love-blue/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 z-20">
                     <Wallet className="h-3 w-3 text-love-blue" />
                     <span className="text-xs font-semibold text-white">Verified on Chain</span>
                   </div>
@@ -204,6 +254,9 @@ const ProfileDetail = () => {
                   </div>
                 </div>
               </Card>
+
+              {/* Add the detailed profile information */}
+              <ProfileDetailedInfo profile={profile} />
             </div>
           </div>
         </div>
