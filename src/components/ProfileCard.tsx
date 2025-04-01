@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { UserProfile } from "@/types/userTypes";
 import { Card } from "@/components/ui/card";
-import { Heart, X, Sparkles, MapPin } from "lucide-react";
+import { Heart, X, Sparkles, MapPin, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 interface ProfileCardProps {
   profile: UserProfile;
@@ -88,6 +89,15 @@ const ProfileCard = ({ profile, onLike, onDislike, isCompact = false }: ProfileC
             >
               <X className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
+            <Link to={`/profile/${profile.id}`} className="flex-none">
+              <Button
+                size={isCompact ? "default" : "lg"}
+                variant="outline"
+                className="rounded-full bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 hover:text-white text-white"
+              >
+                <Eye className={`${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+              </Button>
+            </Link>
             <Button 
               size={isCompact ? "default" : "lg"}
               className="rounded-full bg-love-purple hover:bg-love-purple/90 text-white flex-1 btn-primary-glow"
